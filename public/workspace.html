@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b1020" />
+    <title>Document RAG Workspace</title>
+    <link rel="stylesheet" href="professional.css" />
+    <link rel="stylesheet" href="auth.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar" aria-label="Workspace navigation">
+        <a class="brand" href="/"><span class="brand-mark">✦</span><span><strong>Document RAG</strong><small>Research workspace</small></span></a>
+        <label class="field-label" for="namespace">Workspace</label>
+        <div class="workspace-control"><input id="namespace" value="pdf-rag" maxlength="100" pattern="[A-Za-z0-9_-]+" aria-label="Workspace namespace" /><span class="online"><i></i> Ready</span></div>
+        <section class="sidebar-section"><div class="section-heading"><span>Documents</span><b id="document-count">0</b></div><div id="documents" class="sidebar-list"><p class="sidebar-empty">No documents yet</p></div></section>
+        <section class="sidebar-section chats-section"><div class="section-heading"><span>Conversations</span><button id="new-chat" class="text-button" type="button">+ New</button></div><div id="conversations" class="sidebar-list"><p class="sidebar-empty">Your chats will appear here</p></div></section>
+        <p class="sidebar-footer">Answers are grounded in your indexed sources.</p>
+      </aside>
+      <section class="main-panel">
+        <header class="page-header"><div><p class="eyebrow"><span class="eyebrow-dot"></span>Research workspace</p><h1>Turn documents into <em>clear answers.</em></h1><p class="subtitle">Search your private knowledge base and verify every answer against its source.</p><div class="header-metrics"><span><b id="header-document-count">0</b> documents indexed</span><span>·</span><span>Grounded responses</span></div></div><div class="header-actions"><button id="focus-upload" class="secondary-button" type="button"><span>+</span> Add knowledge</button><button id="logout" class="logout-button" type="button">Sign out</button></div></header>
+        <section id="ingest-card" class="ingest-card">
+          <div class="ingest-intro"><span class="step-badge">1</span><div><h2>Build your knowledge base</h2><p>Upload up to five files or add one public web page.</p></div></div>
+          <form id="upload-form"><label id="drop-zone" class="drop-zone" for="files"><input id="files" name="files" type="file" accept=".pdf,.docx,.txt,.csv" multiple /><span class="upload-icon">↑</span><strong>Drop files here or browse</strong><small>PDF, DOCX, TXT, CSV · Up to 10 MB each</small><span id="file-summary"></span></label><button type="submit">Index selected files</button></form>
+          <div class="or-divider"><span>or</span></div>
+          <form id="url-form" class="url-form"><input id="url" type="url" placeholder="Paste a public web page URL" aria-label="Public web page URL" /><button type="submit" class="secondary-button">Index URL</button></form>
+          <p id="upload-status" class="status" aria-live="polite"></p>
+        </section>
+        <section id="chat" class="chat" aria-live="polite"><div class="empty-state"><span class="empty-icon">⌕</span><h2>What would you like to learn?</h2><p>Upload a document and ask a question. Every answer can be checked against its cited source.</p><div class="suggestions"><button type="button" data-question="Summarize the key points.">Summarize the key points</button><button type="button" data-question="What are the most important deadlines?">Find important deadlines</button><button type="button" data-question="What evidence supports the main conclusion?">Find supporting evidence</button></div></div></section>
+        <form id="question-form" class="composer"><textarea id="question" placeholder="Ask anything about your documents..." rows="1" required></textarea><button type="submit" aria-label="Send question"><span class="send-label">Send</span><span class="send-icon">↑</span></button></form>
+        <p class="composer-note">Responses are limited to your retrieved documents. Low-confidence questions receive an honest “I don’t know.”</p>
+      </section>
+    </main>
+    <template id="source-template"><article class="source-card"><div class="source-title"><span class="source-number"></span><strong></strong></div><p></p><a target="_blank" rel="noreferrer">View original source <span>↗</span></a></article></template>
+    <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+    <section id="auth-overlay" class="auth-overlay" aria-label="Sign in">
+      <form id="auth-form" class="auth-card"><span class="auth-mark">✦</span><p class="eyebrow">Document RAG Workspace</p><h2 id="auth-title">Welcome back</h2><p id="auth-copy">Sign in to access your private research workspace.</p><label>Email<input id="auth-email" type="email" autocomplete="email" required placeholder="you@example.com" /></label><label>Password<input id="auth-password" type="password" autocomplete="current-password" required minlength="8" placeholder="At least 8 characters" /></label><p id="auth-error" class="auth-error" aria-live="polite"></p><button type="submit">Sign in</button><button id="auth-toggle" class="auth-toggle" type="button">Need an account? Create one</button></form>
+    </section>
+    <script src="workspace.js"></script>
+  </body>
+</html>
