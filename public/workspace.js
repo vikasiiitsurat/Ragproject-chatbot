@@ -85,8 +85,77 @@ function renderMessages(messages) {
 async function loadConversation(id) { const data = await api(`/api/chat/conversations/${id}?namespace=${encodeURIComponent(workspace())}`); activeConversationId = id; renderMessages(data.conversation.messages); }
 function newChat() { activeConversationId = null; chat.innerHTML = '<div class="empty-state"><span class="empty-icon">⌕</span><h2>What would you like to learn?</h2><p>Upload a document and ask a question. Every answer can be checked against its cited source.</p><div class="suggestions"><button type="button" data-question="Summarize the key points.">Summarize the key points</button><button type="button" data-question="What are the most important deadlines?">Find important deadlines</button><button type="button" data-question="What evidence supports the main conclusion?">Find supporting evidence</button></div></div>'; bindSuggestions(); }
 function bindSuggestions() { chat.querySelectorAll("[data-question]").forEach((button) => { button.onclick = () => { $("#question").value = button.dataset.question; $("#question").focus(); }; }); }
+function setMode(mode) {
+  document.querySelectorAll(".mode-tab").forEach((tab) => {
+    const active = tab.dataset.mode === mode;
+    tab.classList.toggle("active", active);
+    tab.setAttribute("aria-selected", String(active));
+  });
+  $("#chat-workspace").classList.toggle("hidden", mode !== "chat");
+  $("#research-workspace").classList.toggle("hidden", mode !== "research");
+}
+function researchStatus(message, kind = "") {
+  const element = $("#research-status");
+  element.textContent = message;
+  element.className = `research-status ${kind}`;
+}
+function investigationCard(investigation) {
+  const card = document.createElement("article");
+  card.className = `investigation-card ${investigation.status}`;
+  const state = document.createElement("span");
+  state.className = "evidence-state";
+  state.textContent = investigation.status === "supported" ? "✓" : "!";
+  const title = document.createElement("strong");
+  title.textContent = investigation.question;
+  const detail = document.createElement("small");
+  const count = investigation.sources?.length || 0;
+  detail.textContent = investigation.status === "supported" ? `${count} evidence excerpt${count === 1 ? "" : "s"} found` : "Not enough reliable evidence found";
+  card.append(state, title, detail);
+  return card;
+}
+function renderResearchResult(result) {
+  const target = $("#research-result");
+  target.replaceChildren();
+
+  const report = document.createElement("section");
+  report.className = "research-report";
+  const reportTitle = document.createElement("h2");
+  reportTitle.textContent = "Research report";
+  const reportBody = document.createElement("div");
+  reportBody.className = "report-body";
+  reportBody.textContent = result.report;
+  report.append(reportTitle, reportBody);
+
+  const evidence = document.createElement("aside");
+  evidence.className = "research-evidence";
+  const evidenceTitle = document.createElement("h2");
+  evidenceTitle.textContent = "Research trail";
+  const evidenceCopy = document.createElement("p");
+  evidenceCopy.textContent = "The agent checked each focused question before writing the report.";
+  const investigations = document.createElement("div");
+  investigations.className = "investigation-list";
+  investigations.append(...result.plan.map(investigationCard));
+  evidence.append(evidenceTitle, evidenceCopy, investigations);
+
+  target.append(report, evidence);
+  if (result.sources.length) {
+    const sources = document.createElement("section");
+    sources.className = "research-sources";
+    const title = document.createElement("h2");
+    title.textContent = "Cited sources";
+    const copy = document.createElement("p");
+    copy.textContent = "Open a source to verify the evidence used in this report.";
+    const grid = document.createElement("div");
+    grid.className = "research-sources-grid";
+    grid.append(...result.sources.map(sourceCard));
+    sources.append(title, copy, grid);
+    target.append(sources);
+  }
+  target.classList.remove("hidden");
+}
 
 $("#new-chat").onclick = newChat;
+document.querySelectorAll(".mode-tab").forEach((tab) => { tab.onclick = () => setMode(tab.dataset.mode); });
 $("#logout").onclick = () => { localStorage.removeItem("documentRagAccessToken"); accessToken = null; activeConversationId = null; newChat(); showAuth(); };
 $("#focus-upload").onclick = () => $("#ingest-card").scrollIntoView({ behavior: "smooth", block: "center" });
 namespace.onchange = async () => { newChat(); try { await refreshDashboard(); } catch (error) { setStatus(error.message, true); } };
@@ -113,6 +182,24 @@ $("#question-form").onsubmit = async (event) => {
   setButton(form, true, "Searching...");
   try { const data = await api("/api/chat/ask", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question, namespace: workspace(), conversationId: activeConversationId }) }); activeConversationId = data.conversationId; $("#question").value = ""; $("#question").style.height = "auto"; renderMessages(data.messages); await refreshDashboard(); }
   catch (error) { setStatus(`Question failed: ${error.message}`, true); showToast(`Question failed: ${error.message}`, true); } finally { setButton(form, false); }
+};
+$("#research-form").onsubmit = async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const topic = $("#research-topic").value.trim();
+  if (topic.length < 10) return researchStatus("Describe a research question using at least 10 characters.", "error");
+  researchStatus("Planning focused questions and checking evidence in your indexed documents…", "loading");
+  $("#research-result").classList.add("hidden");
+  setButton(form, true, "Researching…");
+  try {
+    const result = await api("/api/research/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic, namespace: workspace() }) });
+    renderResearchResult(result);
+    researchStatus(result.lowConfidence ? "Report complete — some questions had limited evidence. Review the research trail." : "Research complete — every finding is linked to its evidence.", result.lowConfidence ? "warning" : "");
+    showToast("Research report is ready.");
+  } catch (error) {
+    researchStatus(`Research failed: ${error.message}`, "error");
+    showToast(`Research failed: ${error.message}`, true);
+  } finally { setButton(form, false); }
 };
 
 $("#auth-toggle").onclick = () => setAuthMode(authMode === "login" ? "register" : "login");

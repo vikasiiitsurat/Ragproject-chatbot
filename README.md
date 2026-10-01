@@ -4,6 +4,10 @@ A JavaScript RAG application for asking grounded questions about PDFs, DOCX, TXT
 
 Gemini handles embeddings, reranking, and answer generation. Pinecone provides vector search, while PostgreSQL stores users, workspaces, documents, jobs, conversations, and messages.
 
+## Research agent
+
+Alongside quick document chat, the workspace includes a guided **Document Research Agent** for broad questions. It breaks a request into a small set of evidence-seeking sub-questions, retrieves and reranks chunks for each question, marks weak evidence explicitly, and writes a structured report with numbered, clickable sources. The report is grounded only in indexed workspace documents; it responds with an honest "I don't know" when no sufficiently relevant evidence is found.
+
 ## Quick start
 
 1. Use Node.js 20 or later.
@@ -46,7 +50,8 @@ src/
   lib/                  Shared helpers
 public/
   workspace.html        Active dashboard page
-  workspace.css         Dashboard styles
+  professional.css      Core dashboard styles
+  agent.css             Research-agent workspace styles
   workspace.js          Dashboard logic
 docs/
   ARCHITECTURE.md       Request and retrieval flow
